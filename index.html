@@ -106,8 +106,10 @@ button,input,select,textarea{font-family:var(--font)}
 .t-meta{display:flex;align-items:center;gap:5px;margin-top:2px;flex-wrap:wrap}
 .t-ptag{font-size:10px;padding:1px 6px;border-radius:5px;font-weight:500}
 .t-due{font-size:10px;color:var(--txt3)}.t-due.ov{color:var(--q1-tx);font-weight:500}
-.t-del{background:none;border:none;font-size:12px;color:var(--txt3);cursor:pointer;padding:0 2px;opacity:0;transition:opacity .12s;margin-left:auto;flex-shrink:0}
+.t-del{background:none;border:none;font-size:12px;color:var(--txt3);cursor:pointer;padding:0 2px;opacity:0;transition:opacity .12s;margin-left:2px;flex-shrink:0}
 .task-row:hover .t-del{opacity:1}
+.t-gcal-btn{background:none;border:none;font-size:13px;cursor:pointer;padding:0 2px;opacity:0;transition:opacity .12s;flex-shrink:0}
+.task-row:hover .t-gcal-btn{opacity:1}
 .q-input{width:100%;padding:7px 8px;font-size:12px;border:1px dashed rgba(0,0,0,.18);border-radius:var(--r-md);background:rgba(255,255,255,.45);color:var(--txt);outline:none;transition:all .14s;margin-top:4px}
 .q-input::placeholder{color:var(--txt3)}.q-input:focus{border-color:var(--accent);background:rgba(255,255,255,.82)}
 .empty-msg{padding:12px 0;font-size:12px;color:var(--txt3);text-align:center}
@@ -437,6 +439,18 @@ button,input,select,textarea{font-family:var(--font)}
       <div class="form-grp"><label class="form-lbl">カレンダー日時</label><input class="form-inp" id="tDatetime" type="datetime-local"></div>
       <div class="form-grp"><label class="form-lbl">所要時間（分）</label><input class="form-inp" id="tDuration" type="number" value="60" min="15" step="15"></div>
     </div>
+    <div style="margin-top:10px;padding:10px 12px;background:var(--accent-lt);border-radius:var(--r-md);border:1px solid var(--q2-bd)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <input type="checkbox" id="tAddGcal" style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer">
+        <label for="tAddGcal" style="font-size:13px;font-weight:500;cursor:pointer;color:var(--accent-dk)">📆 Googleカレンダーにも追加する</label>
+      </div>
+      <div id="gcalCalPicker" style="display:none">
+        <label style="font-size:11px;color:var(--txt2);display:block;margin-bottom:3px">書き込み先カレンダー</label>
+        <select class="form-sel" id="tCalId" style="font-size:12px">
+          <option value="primary">メインカレンダー（primary）</option>
+        </select>
+      </div>
+    </div>
     <div class="modal-footer">
       <button class="sec-btn" onclick="closeModal('taskModal')">キャンセル</button>
       <button class="primary-btn" onclick="saveTask()">保存</button>
@@ -586,6 +600,86 @@ async function fetchICS(icsUrl) {
   const text = await res.text();
   if (text.startsWith('ERROR:') || text.startsWith('error:')) throw new Error(text);
   return text;
+}
+
+// ── Googleカレンダーへのイベント書き込み（GAS POST経由）──
+async function addEventToGCal(task) {
+  if (!S.gasProxyUrl) return;
+  if (!task.datetime && !task.due) return;
+
+  // 開始時刻を決定
+  let startISO, endISO;
+  if (task.datetime) {
+    const start = new Date(task.datetime);
+    const end   = new Date(start.getTime() + (task.duration || 60) * 60000);
+    startISO = start.toISOString();
+    endISO   = end.toISOString();
+  } else {
+    // 期日のみの場合は終日イベント
+    startISO = task.due;
+    endISO   = null;
+  }
+
+  const proj = task.proj ? S.projects.find(p => p.id === task.proj) : null;
+  const qLabel = ['','【緊急×重要】','【重要】','【緊急】','【後回し】'][task.q] || '';
+  const desc = [
+    qLabel,
+    proj  ? 'プロジェクト: ' + proj.name : '',
+    task.role  ? '役割: ' + task.role    : '',
+    task.note  ? 'メモ: ' + task.note    : ''
+  ].filter(Boolean).join('\n');
+
+  // 書き込み先カレンダーを決定（タスクにcalendarId指定があればそれ、なければprimary）
+  const calendarId = task.calendarId || 'primary';
+
+  const payload = {
+    action:      'addEvent',
+    calendarId:  calendarId,
+    title:       task.name,
+    start:       startISO,
+    end:         endISO,
+    durationMin: task.duration || 60,
+    allDay:      !task.datetime,
+    description: desc
+  };
+
+  try {
+    let gasUrl = S.gasProxyUrl.trim().replace(/\/+$/, '');
+    if (!gasUrl.includes('/exec')) gasUrl += '/exec';
+
+    const res = await fetch(gasUrl, {
+      method: 'POST',
+      mode:   'cors',
+      headers: { 'Content-Type': 'text/plain' }, // GASはapplication/jsonをrejectするためtext/plainで送る
+      body:   JSON.stringify(payload)
+    });
+    const json = await res.json();
+    if (json.success) {
+      // イベントIDを保存しておく（後で削除に使う）
+      task.gcalEventId = json.eventId;
+      task.gcalCalId   = calendarId;
+      save();
+      toast('📆 「' + task.name + '」をGoogleカレンダーに追加しました', 'success');
+    } else {
+      toast('カレンダー追加エラー: ' + (json.error || '不明'), 'error');
+    }
+  } catch(err) {
+    toast('カレンダー書き込み失敗: ' + err.message, 'error');
+  }
+}
+
+// ── Googleカレンダーからイベント削除 ──
+async function removeEventFromGCal(task) {
+  if (!S.gasProxyUrl || !task.gcalEventId) return;
+  let gasUrl = S.gasProxyUrl.trim().replace(/\/+$/, '');
+  if (!gasUrl.includes('/exec')) gasUrl += '/exec';
+  try {
+    await fetch(gasUrl, {
+      method: 'POST', mode: 'cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'deleteEvent', calendarId: task.gcalCalId || 'primary', eventId: task.gcalEventId })
+    });
+  } catch(e) { /* silent */ }
 }
 
 // Parse iCal text → array of event objects with JS Date start/end
@@ -861,6 +955,7 @@ function taskHTML(t) {
   const due  = t.due  ? new Date(t.due) : null;
   const tod  = new Date(); tod.setHours(0,0,0,0);
   const ov   = due && due < tod && !t.done;
+  const gcalSynced = !!t.gcalEventId;
   return `<div class="task-row">
     <div class="t-check ${t.done?'checked':''}" onclick="toggleTask(${t.id})"></div>
     <div class="t-body">
@@ -869,8 +964,10 @@ function taskHTML(t) {
         ${proj?`<span class="t-ptag" style="background:${proj.color}22;color:${proj.color}">${e(proj.name)}</span>`:''}
         ${t.role?`<span class="t-ptag">${e(t.role)}</span>`:''}
         ${due?`<span class="t-due ${ov?'ov':''}">${ov?'⚠ ':''}${due.getMonth()+1}/${due.getDate()}</span>`:''}
+        ${gcalSynced?`<span class="t-ptag" style="background:#e8f0fe;color:#4285f4">📆 GCal済</span>`:''}
       </div>
     </div>
+    ${!gcalSynced && S.gasProxyUrl ? `<button class="t-gcal-btn" onclick="quickAddToGcal(${t.id})" title="Googleカレンダーに追加">📆</button>` : ''}
     <button class="t-del" onclick="deleteTask(${t.id})">✕</button>
   </div>`;
 }
@@ -1048,9 +1145,44 @@ function populateSels() {
     const el = document.getElementById(id);
     if (el) el.innerHTML = '<option value="">なし</option>' + S.roles.map(r=>`<option value="${e(r)}">${e(r)}</option>`).join('');
   });
+  // カレンダーID選択肢を登録済みカレンダーから生成
+  const tCal = document.getElementById('tCalId');
+  if (tCal) {
+    const opts = ['<option value="primary">メインカレンダー（primary）</option>'];
+    S.calendars.forEach(cal => {
+      // iCal URLからカレンダーIDを抽出
+      const m = cal.url.match(/ical\/([^/]+)\//);
+      if (m) {
+        const id = decodeURIComponent(m[1]);
+        opts.push(`<option value="${e(id)}">${e(cal.name)}</option>`);
+      }
+    });
+    tCal.innerHTML = opts.join('');
+  }
+  // チェックボックスのイベント
+  const chk = document.getElementById('tAddGcal');
+  const picker = document.getElementById('gcalCalPicker');
+  if (chk && picker) {
+    chk.onchange = () => { picker.style.display = chk.checked ? 'block' : 'none'; };
+  }
 }
 
 /* ══ ACTIONS ══ */
+// 既存タスクをGCal追加（📆ボタン押下時）
+function quickAddToGcal(id) {
+  const task = S.tasks.find(t => t.id === id);
+  if (!task) return;
+  if (!task.datetime && !task.due) {
+    toast('カレンダー追加には「期日」または「カレンダー日時」が必要です。タスクを編集して日時を設定してください。','info', 5000);
+    return;
+  }
+  if (!S.gasProxyUrl) {
+    toast('GASプロキシが未設定です。「📆 カレンダー」タブから設定してください。','error');
+    return;
+  }
+  addEventToGCal(task);
+}
+
 function toggleTask(id){const t=S.tasks.find(t=>t.id===id);if(!t)return;t.done=!t.done;render();toast(t.done?`✓ 完了！`:`未完了に戻しました`,'success');}
 function deleteTask(id){S.tasks=S.tasks.filter(t=>t.id!==id);render();toast('タスクを削除','info');}
 function deleteProject(id){if(!confirm('削除しますか？'))return;S.tasks.forEach(t=>{if(t.proj===id)t.proj=null;});S.projects=S.projects.filter(p=>p.id!==id);render();toast('プロジェクトを削除','info');}
@@ -1059,9 +1191,34 @@ function openTaskForProject(projId){populateSels();document.getElementById('tPro
 function saveTask(){
   const name=document.getElementById('tName').value.trim();
   if(!name){toast('タスク名を入力してください','error');return;}
-  S.tasks.push({id:S.nextId++,name,q:parseInt(document.getElementById('tQ').value),proj:parseInt(document.getElementById('tProj').value)||null,role:document.getElementById('tRole').value||null,due:document.getElementById('tDue').value,note:document.getElementById('tNote').value,datetime:document.getElementById('tDatetime').value,duration:parseInt(document.getElementById('tDuration').value)||60,done:false});
-  closeModal('taskModal');['tName','tNote','tDue','tDatetime'].forEach(id=>document.getElementById(id).value='');
-  render();toast(`✓ "${name}" を追加しました`,'success');
+  const addGcal = document.getElementById('tAddGcal')?.checked || false;
+  const calendarId = document.getElementById('tCalId')?.value || 'primary';
+  const task = {
+    id:S.nextId++, name,
+    q:parseInt(document.getElementById('tQ').value),
+    proj:parseInt(document.getElementById('tProj').value)||null,
+    role:document.getElementById('tRole').value||null,
+    due:document.getElementById('tDue').value,
+    note:document.getElementById('tNote').value,
+    datetime:document.getElementById('tDatetime').value,
+    duration:parseInt(document.getElementById('tDuration').value)||60,
+    done:false,
+    calendarId: calendarId,
+    gcalEventId: null,
+    gcalCalId: null
+  };
+  S.tasks.push(task);
+  closeModal('taskModal');
+  ['tName','tNote','tDue','tDatetime'].forEach(id=>document.getElementById(id).value='');
+  if(document.getElementById('tAddGcal')) document.getElementById('tAddGcal').checked=false;
+  render();
+  toast(`✓ "${name}" を追加しました`,'success');
+  // Googleカレンダーに追加（チェックされていて、日時か期日がある場合）
+  if(addGcal && S.gasProxyUrl && (task.datetime || task.due)){
+    addEventToGCal(task);
+  } else if(addGcal && (!task.datetime && !task.due)){
+    toast('カレンダー追加には「カレンダー日時」または「期日」の入力が必要です','info');
+  }
 }
 function saveProject(){
   const name=document.getElementById('pName').value.trim();
