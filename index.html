@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>CoveyPlanner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --accent:#1D9E75;--accent-lt:#E1F5EE;--accent-dk:#0F6E56;
+  --q1-bg:#FCEBEB;--q1-bd:#F09595;--q1-tx:#A32D2D;
+  --q2-bg:#E1F5EE;--q2-bd:#5DCAA5;--q2-tx:#0F6E56;
+  --q3-bg:#FAEEDA;--q3-bd:#EF9F27;--q3-tx:#854F0B;
+  --q4-bg:#F1EFE8;--q4-bd:#B4B2A9;--q4-tx:#5F5E5A;
+  --bg:#F7F6F2;--surface:#FFFFFF;--border:rgba(0,0,0,0.09);--border2:rgba(0,0,0,0.15);
+  --txt:#1A1A18;--txt2:#5A5A56;--txt3:#9A9A96;
+  --r-sm:6px;--r-md:10px;--r-lg:16px;
+  --sidebar-w:240px;--header-h:56px;
+  --font:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;
+  --font-serif:'DM Serif Display',serif;
+  --sh-sm:0 1px 4px rgba(0,0,0,0.08);--sh-md:0 4px 14px rgba(0,0,0,0.11);
+}
+@media(prefers-color-scheme:dark){
+  :root{--bg:#15151A;--surface:#1E1E24;--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);--txt:#EEEEE8;--txt2:#9A9A96;--txt3:#5A5A56;}
+}
+html,body{height:100%;font-family:var(--font);font-size:14px;background:var(--bg);color:var(--txt);line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font-family:var(--font)}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+.app{display:flex;height:100vh;overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{width:var(--sidebar-w);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;z-index:10;transition:transform .25s ease}
+.logo-wrap{padding:18px 16px 13px;border-bottom:1px solid var(--border)}
+.logo{font-family:var(--font-serif);font-size:17px;color:var(--accent);display:flex;align-items:center;gap:7px}
+.logo-gem{width:9px;height:9px;background:var(--accent);border-radius:2px;transform:rotate(45deg)}
+.logo-sub{font-size:10.5px;color:var(--txt3);margin-top:2px}
+.nav-sec{padding:10px 8px 4px}
+.nav-lbl{font-size:10px;color:var(--txt3);letter-spacing:1px;text-transform:uppercase;padding:0 8px 6px;font-weight:500}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 11px;border-radius:var(--r-md);cursor:pointer;font-size:13px;color:var(--txt2);transition:all .12s;margin-bottom:2px;border:none;background:none;width:100%;text-align:left}
+.nav-item:hover{background:var(--bg);color:var(--txt)}.nav-item.active{background:var(--accent-lt);color:var(--accent-dk);font-weight:500}
+.nav-icon{font-size:14px;width:18px;text-align:center;flex-shrink:0}
+.proj-dot{width:9px;height:9px;border-radius:2px;transform:rotate(45deg);flex-shrink:0}
+.sb-projects{flex:1;padding:0 8px 8px}
+.add-proj-btn{width:100%;padding:8px 11px;border:1px dashed var(--border2);border-radius:var(--r-md);background:none;font-size:12px;color:var(--txt3);cursor:pointer;transition:all .12s;text-align:center;margin:3px 0 10px}
+.add-proj-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-lt)}
+
+/* TOPBAR */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{height:var(--header-h);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:7px;flex-shrink:0}
+.hamburger{display:none;background:none;border:none;font-size:20px;color:var(--txt2);padding:4px 6px;cursor:pointer}
+.tab-group{display:flex;gap:4px}
+.tab-btn{padding:6px 13px;border-radius:var(--r-md);font-size:13px;border:1px solid var(--border);background:none;color:var(--txt2);cursor:pointer;transition:all .12s;white-space:nowrap}
+.tab-btn:hover{background:var(--bg)}.tab-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:500}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:7px}
+.sync-btn{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:var(--r-md);border:1px solid var(--border2);background:var(--surface);font-size:12px;cursor:pointer;color:var(--txt2);transition:all .12s;white-space:nowrap}
+.sync-btn:hover{background:var(--bg)}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--txt3);flex-shrink:0}
+.sync-dot.synced{background:var(--accent)}.sync-dot.syncing{background:#fbbc04;animation:pulse .8s infinite}.sync-dot.error{background:#ea4335}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.primary-btn{padding:6px 15px;background:var(--accent);color:#fff;border:none;border-radius:var(--r-md);font-size:13px;font-weight:500;cursor:pointer;transition:all .12s;white-space:nowrap}
+.primary-btn:hover{background:var(--accent-dk)}
+.content{flex:1;overflow-y:auto;padding:18px}
+.view{display:none}.view.active{display:block;animation:fadeUp .18s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+
+/* WEEK */
+.week-bar{display:flex;align-items:center;gap:9px;margin-bottom:16px;flex-wrap:wrap}
+.wk-nav{width:29px;height:29px;border:1px solid var(--border2);border-radius:var(--r-sm);background:var(--surface);cursor:pointer;color:var(--txt2);font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .12s}
+.wk-nav:hover{background:var(--bg)}
+.week-info h2{font-size:15px;font-weight:500}.week-info p{font-size:11.5px;color:var(--txt3)}
+.today-btn{padding:5px 11px;border:1px solid var(--border2);border-radius:var(--r-sm);background:none;font-size:12px;color:var(--txt2);cursor:pointer;transition:all .12s}
+.today-btn:hover{background:var(--bg)}
+.sec-lbl{font-size:11px;color:var(--txt3);font-weight:500;letter-spacing:.4px;text-transform:uppercase;margin-bottom:8px}
+
+/* ROLES */
+.roles-wrap{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px}
+.role-chip{padding:5px 12px;border-radius:20px;font-size:12px;border:1px solid var(--border2);background:var(--surface);cursor:pointer;transition:all .14s;color:var(--txt2)}
+.role-chip:hover,.role-chip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.role-add{padding:5px 12px;border-radius:20px;font-size:12px;border:1px dashed var(--border2);background:none;cursor:pointer;color:var(--txt3);transition:all .14s}
+.role-add:hover{border-color:var(--accent);color:var(--accent)}
+
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+.stat-card{background:var(--surface);border-radius:var(--r-md);padding:13px 15px;border:1px solid var(--border);box-shadow:var(--sh-sm)}
+.stat-lbl{font-size:11px;color:var(--txt3);margin-bottom:3px}.stat-val{font-size:23px;font-weight:700;line-height:1}
+.sv-green{color:var(--accent)}.sv-orange{color:var(--q3-tx)}
+
+/* QUADRANT */
+.quad-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:20px}
+.quadrant{border-radius:var(--r-lg);padding:13px;border:1px solid var(--border)}
+.q1{background:var(--q1-bg)}.q2{background:var(--q2-bg)}.q3{background:var(--q3-bg)}.q4{background:var(--q4-bg)}
+.q-head{display:flex;align-items:center;gap:7px;margin-bottom:10px}
+.q-title{font-size:11.5px;font-weight:500}
+.q1 .q-title{color:var(--q1-tx)}.q2 .q-title{color:var(--q2-tx)}.q3 .q-title{color:var(--q3-tx)}.q4 .q-title{color:var(--q4-tx)}
+.q-tag{font-size:10px;padding:1px 7px;border-radius:8px;font-weight:500;margin-left:auto}
+.q1 .q-tag{background:var(--q1-bd);color:var(--q1-tx)}.q2 .q-tag{background:var(--q2-bd);color:var(--q2-tx)}
+.q3 .q-tag{background:var(--q3-bd);color:var(--q3-tx)}.q4 .q-tag{background:var(--q4-bd);color:var(--q4-tx)}
+.task-row{display:flex;align-items:flex-start;gap:8px;padding:7px 8px;border-radius:var(--r-md);background:rgba(255,255,255,.66);border:1px solid rgba(0,0,0,.06);margin-bottom:5px;transition:background .12s}
+.task-row:hover{background:rgba(255,255,255,.9)}
+.t-check{width:15px;height:15px;border-radius:4px;border:1.5px solid rgba(0,0,0,.22);flex-shrink:0;margin-top:1px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .14s;font-size:9px;color:#fff}
+.t-check.checked{background:var(--accent);border-color:var(--accent)}.t-check.checked::after{content:'✓'}
+.t-body{flex:1;min-width:0}
+.t-name{font-size:12.5px;line-height:1.4;word-break:break-all}.t-name.done{text-decoration:line-through;color:var(--txt3)}
+.t-meta{display:flex;align-items:center;gap:5px;margin-top:2px;flex-wrap:wrap}
+.t-ptag{font-size:10px;padding:1px 6px;border-radius:5px;font-weight:500}
+.t-due{font-size:10px;color:var(--txt3)}.t-due.ov{color:var(--q1-tx);font-weight:500}
+.t-del{background:none;border:none;font-size:12px;color:var(--txt3);cursor:pointer;padding:0 2px;opacity:0;transition:opacity .12s;margin-left:auto;flex-shrink:0}
+.task-row:hover .t-del{opacity:1}
+.q-input{width:100%;padding:7px 8px;font-size:12px;border:1px dashed rgba(0,0,0,.18);border-radius:var(--r-md);background:rgba(255,255,255,.45);color:var(--txt);outline:none;transition:all .14s;margin-top:4px}
+.q-input::placeholder{color:var(--txt3)}.q-input:focus{border-color:var(--accent);background:rgba(255,255,255,.82)}
+.empty-msg{padding:12px 0;font-size:12px;color:var(--txt3);text-align:center}
+
+/* CALENDAR */
+.cal-wrap{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--sh-sm);overflow:hidden;margin-bottom:20px}
+.cal-head{display:grid;grid-template-columns:50px repeat(7,1fr);border-bottom:1px solid var(--border)}
+.cal-hcell{padding:9px 5px;text-align:center;font-size:11px;color:var(--txt3);border-right:1px solid var(--border)}
+.cal-hcell:last-child{border-right:none}.cal-day-num{font-size:16px;font-weight:600;color:var(--txt)}
+.cal-hcell.today{background:var(--accent-lt)}.cal-hcell.today .cal-day-num{color:var(--accent)}
+.cal-body{display:grid;grid-template-columns:50px repeat(7,1fr);max-height:440px;overflow-y:auto}
+.cal-time{font-size:10px;color:var(--txt3);text-align:right;padding:2px 5px;height:48px;display:flex;align-items:flex-start;padding-top:3px;justify-content:flex-end;border-right:1px solid var(--border);border-bottom:1px solid var(--border)}
+.cal-cell{height:48px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);position:relative;cursor:pointer;overflow:visible}
+.cal-cell:last-child{border-right:none}.cal-cell:hover{background:rgba(29,158,117,.05)}.cal-cell.today-col{background:rgba(29,158,117,.03)}
+.ev-pill{position:absolute;left:2px;right:2px;z-index:3;border-radius:4px;padding:2px 5px;font-size:10px;font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:pointer;line-height:1.3}
+.ev-q1{background:var(--q1-bd);color:var(--q1-tx)}.ev-q2{background:var(--q2-bd);color:var(--q2-tx)}
+.ev-q3{background:var(--q3-bd);color:var(--q3-tx)}.ev-q4{background:var(--q4-bd);color:var(--q4-tx)}
+.gc0{background:#4285f4;color:#fff}.gc1{background:#34a853;color:#fff}.gc2{background:#ea4335;color:#fff}
+.gc3{background:#fbbc04;color:#333}.gc4{background:#a142f4;color:#fff}.gc5{background:#24c1e0;color:#fff}
+.gc6{background:#ff6d01;color:#fff}.gc7{background:#795548;color:#fff}
+
+/* all-day strip above hourly grid */
+.cal-allday-row{display:grid;grid-template-columns:50px repeat(7,1fr);border-bottom:2px solid var(--border);min-height:28px}
+.cal-allday-time{font-size:9px;color:var(--txt3);text-align:right;padding:6px 5px;border-right:1px solid var(--border)}
+.cal-allday-cell{border-right:1px solid var(--border);padding:3px 2px;min-height:28px}
+.cal-allday-cell:last-child{border-right:none}
+.allday-pill{font-size:10px;font-weight:500;padding:2px 6px;border-radius:3px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* DEBUG panel */
+.debug-panel{background:var(--bg);border:1px solid var(--border2);border-radius:var(--r-md);padding:14px;margin-bottom:16px;font-size:12px;font-family:monospace;line-height:1.7;max-height:220px;overflow-y:auto;display:none}
+.debug-panel.show{display:block}
+.debug-toggle{font-size:11px;color:var(--txt3);cursor:pointer;text-decoration:underline;margin-bottom:12px;display:inline-block}
+
+/* PROJECTS */
+.proj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
+.proj-card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--sh-sm);padding:17px;transition:box-shadow .15s}
+.proj-card:hover{box-shadow:var(--sh-md)}
+.pc-head{display:flex;align-items:center;gap:9px;margin-bottom:11px}
+.pc-dot{width:12px;height:12px;border-radius:3px;transform:rotate(45deg);flex-shrink:0}
+.pc-name{font-size:15px;font-weight:500;flex:1}
+.proj-bar-wrap{display:flex;align-items:center;gap:9px;margin-bottom:12px}
+.proj-bar{flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.proj-bar-fill{height:100%;border-radius:3px;transition:width .5s ease}
+.proj-pct{font-size:11px;color:var(--txt3);min-width:32px;text-align:right}
+.proj-task-list{border-top:1px solid var(--border);padding-top:10px}
+.ptask-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);font-size:12.5px}
+.ptask-row:last-child{border-bottom:none}
+.ms-check{width:17px;height:17px;border-radius:50%;border:1.5px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .14s;font-size:10px}
+.ms-check.done{background:var(--accent);border-color:var(--accent);color:#fff}.ms-check.done::after{content:'✓'}
+.pt-name{flex:1}.pt-name.done{text-decoration:line-through;color:var(--txt3)}
+.q-mini{font-size:10px;padding:1px 7px;border-radius:8px;font-weight:500}
+.qm1{background:var(--q1-bg);color:var(--q1-tx)}.qm2{background:var(--q2-bg);color:var(--q2-tx)}
+.qm3{background:var(--q3-bg);color:var(--q3-tx)}.qm4{background:var(--q4-bg);color:var(--q4-tx)}
+.proj-add-task{width:100%;padding:7px;margin-top:8px;border:1px dashed var(--border2);border-radius:var(--r-md);background:none;font-size:12px;color:var(--txt3);cursor:pointer;text-align:left;transition:all .12s}
+.proj-add-task:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-lt)}
+
+/* CALENDAR SETTINGS */
+.cset-card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--sh-sm);padding:24px;max-width:720px}
+.cset-title{font-family:var(--font-serif);font-size:21px;color:var(--accent);margin-bottom:5px}
+.cset-sub{font-size:12.5px;color:var(--txt2);margin-bottom:18px;line-height:1.75}
+.setup-steps{display:flex;flex-direction:column;gap:0}
+.step{display:flex;gap:14px;padding:16px 0;border-bottom:1px solid var(--border)}
+.step:last-child{border-bottom:none}
+.step-num{width:28px;height:28px;background:var(--accent);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;margin-top:1px}
+.step-body h4{font-size:13px;font-weight:500;margin-bottom:5px}
+.step-body p{font-size:12px;color:var(--txt2);line-height:1.75}
+.step-body code{display:inline-block;background:var(--bg);border:1px solid var(--border2);padding:1px 7px;border-radius:4px;font-family:monospace;font-size:11.5px;color:var(--accent-dk)}
+.gas-code-block{background:var(--bg);border:1px solid var(--border2);border-radius:var(--r-md);padding:14px;margin:10px 0;font-family:monospace;font-size:12px;line-height:1.8;color:var(--txt2);white-space:pre;overflow-x:auto;position:relative}
+.copy-code-btn{position:absolute;top:8px;right:8px;padding:4px 10px;background:var(--accent);color:#fff;border:none;border-radius:var(--r-sm);font-size:11px;cursor:pointer;font-family:var(--font)}
+.copy-code-btn:hover{background:var(--accent-dk)}
+.info-box{background:var(--accent-lt);border:1px solid var(--q2-bd);border-radius:var(--r-md);padding:12px 14px;margin:10px 0;font-size:12px;color:var(--q2-tx);line-height:1.7}
+.warn-box{background:var(--q3-bg);border:1px solid var(--q3-bd);border-radius:var(--r-md);padding:12px 14px;margin:10px 0;font-size:12px;color:var(--q3-tx);line-height:1.7}
+.cal-entry-list{margin-bottom:4px}
+.cal-entry{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border)}
+.cal-entry:last-child{border-bottom:none}
+.cal-entry-swatch{width:13px;height:13px;border-radius:50%;flex-shrink:0}
+.cal-entry-info{flex:1;min-width:0}
+.cal-entry-name{font-size:13px;font-weight:500;margin-bottom:2px}
+.cal-entry-url{font-size:11px;color:var(--txt3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cst{font-size:10px;padding:2px 8px;border-radius:8px;font-weight:500;white-space:nowrap}
+.cst-ok{background:var(--q2-bg);color:var(--q2-tx)}.cst-err{background:var(--q1-bg);color:var(--q1-tx)}.cst-wait{background:var(--q3-bg);color:var(--q3-tx)}
+.del-cal{background:none;border:none;font-size:14px;color:var(--txt3);cursor:pointer;padding:2px 5px;opacity:.5;transition:opacity .12s}
+.del-cal:hover{opacity:1}
+.add-cal-sec{margin-top:20px;padding-top:20px;border-top:1px solid var(--border)}
+.add-cal-title{font-size:13px;font-weight:500;margin-bottom:13px}
+.form-grp{margin-bottom:12px}
+.form-lbl{display:block;font-size:12px;color:var(--txt2);margin-bottom:4px;font-weight:500}
+.form-inp{width:100%;padding:8px 11px;border:1px solid var(--border2);border-radius:var(--r-md);font-size:13px;background:var(--surface);color:var(--txt);outline:none;transition:border-color .14s}
+.form-inp:focus{border-color:var(--accent)}
+.form-sel{width:100%;padding:8px 11px;border:1px solid var(--border2);border-radius:var(--r-md);font-size:13px;background:var(--surface);color:var(--txt);outline:none}
+.form-hint{font-size:11px;color:var(--txt3);margin-top:3px;line-height:1.5}
+.form-row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.color-grid{display:flex;gap:8px;flex-wrap:wrap}
+.cswatch{width:24px;height:24px;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:transform .12s}
+.cswatch:hover{transform:scale(1.15)}.cswatch.sel{border-color:var(--txt)}
+.gas-url-row{display:flex;gap:8px;align-items:flex-end}
+.gas-url-row .form-inp{flex:1}
+.test-btn{padding:8px 14px;border:1px solid var(--border2);border-radius:var(--r-md);background:none;font-size:12px;color:var(--txt2);cursor:pointer;white-space:nowrap;transition:all .12s}
+.test-btn:hover{background:var(--bg)}
+
+/* MODAL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(3px);padding:14px}
+.overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--r-lg);padding:24px;width:100%;max-width:480px;border:1px solid var(--border);box-shadow:var(--sh-md);animation:mIn .17s ease}
+@keyframes mIn{from{opacity:0;transform:scale(.96) translateY(7px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal-title{font-size:16px;font-weight:500;margin-bottom:16px}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+.sec-btn{padding:7px 16px;background:none;border:1px solid var(--border2);border-radius:var(--r-md);font-size:13px;cursor:pointer;color:var(--txt2);transition:all .12s}
+.sec-btn:hover{background:var(--bg)}
+
+/* TOAST */
+.toast-wrap{position:fixed;bottom:18px;right:18px;z-index:300;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{padding:10px 15px;background:var(--txt);color:var(--bg);border-radius:var(--r-md);font-size:13px;box-shadow:var(--sh-md);max-width:400px;animation:tIn .18s ease;display:flex;align-items:flex-start;gap:8px;pointer-events:all;line-height:1.5}
+@keyframes tIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}
+.toast.success{border-left:3px solid var(--accent)}.toast.error{border-left:3px solid #ea4335}.toast.info{border-left:3px solid #4285f4}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .sidebar{position:fixed;top:0;left:0;bottom:0;transform:translateX(-100%);z-index:100}
+  .sidebar.open{transform:translateX(0)}
+  .hamburger{display:flex}
+  .quad-grid,.stats-row{grid-template-columns:1fr 1fr}
+  .proj-grid,.form-row2{grid-template-columns:1fr}
+  .tab-btn{padding:6px 9px;font-size:12px}
+  .content{padding:13px}
+  .sync-btn span:not(.sync-dot){display:none}
+}
+@media(max-width:480px){
+  .quad-grid{grid-template-columns:1fr}
+  .cal-head,.cal-body,.cal-allday-row{grid-template-columns:44px repeat(5,1fr)}
+  .cal-hcell:nth-child(7),.cal-hcell:nth-child(8){display:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="logo-wrap">
+    <div class="logo"><div class="logo-gem"></div>CoveyPlanner</div>
+    <div class="logo-sub">7つの習慣 × プロジェクト管理</div>
+  </div>
+  <div class="nav-sec">
+    <div class="nav-lbl">ビュー</div>
+    <button class="nav-item active" data-view="weekly"><span class="nav-icon">🧭</span>週間コンパス</button>
+    <button class="nav-item" data-view="matrix"><span class="nav-icon">⊞</span>重要度マトリクス</button>
+    <button class="nav-item" data-view="cal-settings"><span class="nav-icon">📆</span>カレンダー設定</button>
+  </div>
+  <div class="nav-sec"><div class="nav-lbl">プロジェクト</div></div>
+  <div class="sb-projects" id="sbProjects"></div>
+  <button class="add-proj-btn" onclick="openModal('projModal')">＋ プロジェクト追加</button>
+</aside>
+
+<div class="main">
+  <header class="topbar">
+    <button class="hamburger" onclick="toggleSidebar()">☰</button>
+    <div class="tab-group">
+      <button class="tab-btn active" data-view="weekly">週間</button>
+      <button class="tab-btn" data-view="projects">PJ一覧</button>
+      <button class="tab-btn" data-view="matrix">マトリクス</button>
+      <button class="tab-btn" data-view="cal-settings">📆 カレンダー</button>
+    </div>
+    <div class="tb-right">
+      <button class="sync-btn" onclick="syncAll()">
+        <div class="sync-dot" id="syncDot"></div>
+        <span id="syncLabel">カレンダー同期</span>
+      </button>
+      <button class="primary-btn" onclick="openModal('taskModal')">＋ タスク</button>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- WEEKLY -->
+    <div id="view-weekly" class="view active">
+      <div class="week-bar">
+        <button class="wk-nav" onclick="shiftWeek(-1)">‹</button>
+        <div class="week-info"><h2 id="weekTitle">—</h2><p id="weekSub">—</p></div>
+        <button class="wk-nav" onclick="shiftWeek(1)">›</button>
+        <button class="today-btn" onclick="weekOffset=0;renderCal()">今週</button>
+      </div>
+      <div class="sec-lbl">今週の役割（ロール）</div>
+      <div class="roles-wrap" id="rolesWrap"></div>
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-lbl">全タスク</div><div class="stat-val" id="stTotal">—</div></div>
+        <div class="stat-card"><div class="stat-lbl">完了済み</div><div class="stat-val sv-green" id="stDone">—</div></div>
+        <div class="stat-card"><div class="stat-lbl">第2領域率</div><div class="stat-val sv-green" id="stQ2">—</div></div>
+        <div class="stat-card"><div class="stat-lbl">カレンダー取込</div><div class="stat-val sv-orange" id="stGcal">0件</div></div>
+      </div>
+      <div class="sec-lbl" style="margin-bottom:10px">重要度 × 緊急度（4象限）</div>
+      <div class="quad-grid">
+        <div class="quadrant q1"><div class="q-head"><span class="q-title">第1領域：緊急 × 重要</span><span class="q-tag">危機管理</span></div><div id="q1list"></div><input class="q-input" placeholder="＋ Enter で追加..." onkeydown="quickAdd(event,1)"></div>
+        <div class="quadrant q2"><div class="q-head"><span class="q-title">第2領域：重要 × 非緊急</span><span class="q-tag">優先投資</span></div><div id="q2list"></div><input class="q-input" placeholder="＋ Enter で追加..." onkeydown="quickAdd(event,2)"></div>
+        <div class="quadrant q3"><div class="q-head"><span class="q-title">第3領域：緊急 × 非重要</span><span class="q-tag">委任検討</span></div><div id="q3list"></div><input class="q-input" placeholder="＋ Enter で追加..." onkeydown="quickAdd(event,3)"></div>
+        <div class="quadrant q4"><div class="q-head"><span class="q-title">第4領域：非緊急 × 非重要</span><span class="q-tag">削減対象</span></div><div id="q4list"></div><input class="q-input" placeholder="＋ Enter で追加..." onkeydown="quickAdd(event,4)"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <span class="sec-lbl" style="margin-bottom:0">週間カレンダー</span>
+        <span id="calEvCount" style="font-size:11px;color:var(--accent);font-weight:500"></span>
+        <span class="debug-toggle" onclick="document.getElementById('debugPanel').classList.toggle('show')">🔍 デバッグ</span>
+      </div>
+      <div class="debug-panel" id="debugPanel"></div>
+      <div class="cal-wrap">
+        <div class="cal-head" id="calHead"></div>
+        <div class="cal-allday-row" id="calAllday"></div>
+        <div class="cal-body" id="calBody"></div>
+      </div>
+    </div>
+
+    <!-- PROJECTS -->
+    <div id="view-projects" class="view">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+        <h2 style="font-size:17px;font-weight:500">プロジェクト一覧</h2>
+        <button class="primary-btn" style="margin-left:auto" onclick="openModal('projModal')">＋ 新規プロジェクト</button>
+      </div>
+      <div class="proj-grid" id="projGrid"></div>
+    </div>
+
+    <!-- MATRIX -->
+    <div id="view-matrix" class="view">
+      <div style="margin-bottom:14px"><h2 style="font-size:17px;font-weight:500;margin-bottom:3px">全タスク 重要度マトリクス</h2><p style="font-size:12px;color:var(--txt3)">全タスクを4象限で俯瞰</p></div>
+      <div class="quad-grid">
+        <div class="quadrant q1"><div class="q-head"><span class="q-title">第1領域：緊急 × 重要</span><span class="q-tag">危機管理</span></div><div id="mq1"></div></div>
+        <div class="quadrant q2"><div class="q-head"><span class="q-title">第2領域：重要 × 非緊急</span><span class="q-tag">優先投資</span></div><div id="mq2"></div></div>
+        <div class="quadrant q3"><div class="q-head"><span class="q-title">第3領域：緊急 × 非重要</span><span class="q-tag">委任検討</span></div><div id="mq3"></div></div>
+        <div class="quadrant q4"><div class="q-head"><span class="q-title">第4領域：非緊急 × 非重要</span><span class="q-tag">削減対象</span></div><div id="mq4"></div></div>
+      </div>
+    </div>
+
+    <!-- CALENDAR SETTINGS -->
+    <div id="view-cal-settings" class="view">
+      <div class="cset-card">
+        <div class="cset-title">Googleカレンダー連携設定</div>
+        <div class="cset-sub">CORS制限を回避するため、<strong>Google Apps Script（GAS）を無料プロキシとして使用</strong>します。一度セットアップすれば複数カレンダーを完全無料で同期できます。</div>
+        <div class="setup-steps">
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <h4>Google Apps Script を新規作成</h4>
+              <p><a href="https://script.google.com/home/start" target="_blank" style="color:var(--accent)">script.google.com</a> を開き、「新しいプロジェクト」をクリック。</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <h4>下のコードを貼り付けて保存</h4>
+              <p>既存コードを全削除し、下をコピーして貼り付け → <strong>Ctrl+S</strong></p>
+              <div class="gas-code-block" id="gasCodeBlock">function doGet(e) {
+  var url = e.parameter.url;
+  if (!url) return ContentService.createTextOutput('error: no url').setMimeType(ContentService.MimeType.TEXT);
+  try {
+    var res = UrlFetchApp.fetch(url, {muteHttpExceptions: true, followRedirects: true});
+    return ContentService.createTextOutput(res.getContentText('UTF-8')).setMimeType(ContentService.MimeType.TEXT);
+  } catch(err) {
+    return ContentService.createTextOutput('error: ' + err).setMimeType(ContentService.MimeType.TEXT);
+  }
+}</div>
+              <button class="copy-code-btn" onclick="copyGasCode()">📋 コピー</button>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <h4>ウェブアプリとしてデプロイ</h4>
+              <p>右上「デプロイ」→「新しいデプロイ」→ 種類「<code>ウェブアプリ</code>」→ アクセス「<code>全員</code>」→「デプロイ」</p>
+              <div class="warn-box">⚠ 「アクセスを承認」が表示されたらGoogleアカウントでログインして許可してください。</div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <h4>デプロイURLを下に貼り付け → 保存</h4>
+              <p>デプロイ後に表示される「ウェブアプリのURL」（<code>https://script.google.com/macros/s/.../exec</code>）を貼り付けます。</p>
+              <div class="info-box">✅ このURLはあなた専用です。他人に教えなければ安全です。</div>
+              <div class="gas-url-row" style="margin-top:10px">
+                <input class="form-inp" id="gasProxyUrl" placeholder="https://script.google.com/macros/s/AKfy.../exec">
+                <button class="test-btn" onclick="testGas()">接続テスト</button>
+                <button class="primary-btn" onclick="saveGasUrl()">保存</button>
+              </div>
+              <div class="form-hint" id="gasProxyHint" style="margin-top:6px"></div>
+            </div>
+          </div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--border);margin:20px 0">
+        <div style="font-size:13px;font-weight:500;margin-bottom:12px">登録済みカレンダー</div>
+        <div class="cal-entry-list" id="calEntryList"></div>
+        <div class="add-cal-sec">
+          <div class="add-cal-title">＋ カレンダーを追加</div>
+          <div class="form-grp">
+            <label class="form-lbl">カレンダー名</label>
+            <input class="form-inp" id="newCalName" placeholder="例：Solae共有、仕事、プライベート...">
+          </div>
+          <div class="form-grp">
+            <label class="form-lbl">iCal URL（Googleカレンダー設定 → iCal形式の公開URL または 非公開URL）</label>
+            <input class="form-inp" id="newCalUrl" placeholder="https://calendar.google.com/calendar/ical/xxxx/basic.ics">
+          </div>
+          <div class="form-grp">
+            <label class="form-lbl">カラー</label>
+            <div class="color-grid" id="calColorGrid"></div>
+          </div>
+          <button class="primary-btn" style="margin-top:6px" onclick="addCalendar()">追加して同期</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- MODALS -->
+<div class="overlay" id="taskModal">
+  <div class="modal">
+    <div class="modal-title">タスクを追加</div>
+    <div class="form-grp"><label class="form-lbl">タスク名 *</label><input class="form-inp" id="tName" placeholder="タスク名を入力..."></div>
+    <div class="form-row2">
+      <div class="form-grp"><label class="form-lbl">領域</label><select class="form-sel" id="tQ"><option value="1">第1領域：緊急×重要</option><option value="2" selected>第2領域：重要×非緊急</option><option value="3">第3領域：緊急×非重要</option><option value="4">第4領域：非緊急×非重要</option></select></div>
+      <div class="form-grp"><label class="form-lbl">期日</label><input class="form-inp" id="tDue" type="date"></div>
+    </div>
+    <div class="form-row2">
+      <div class="form-grp"><label class="form-lbl">プロジェクト</label><select class="form-sel" id="tProj"></select></div>
+      <div class="form-grp"><label class="form-lbl">役割</label><select class="form-sel" id="tRole"></select></div>
+    </div>
+    <div class="form-grp"><label class="form-lbl">メモ</label><input class="form-inp" id="tNote" placeholder="補足・メモ..."></div>
+    <div class="form-row2">
+      <div class="form-grp"><label class="form-lbl">カレンダー日時</label><input class="form-inp" id="tDatetime" type="datetime-local"></div>
+      <div class="form-grp"><label class="form-lbl">所要時間（分）</label><input class="form-inp" id="tDuration" type="number" value="60" min="15" step="15"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="sec-btn" onclick="closeModal('taskModal')">キャンセル</button>
+      <button class="primary-btn" onclick="saveTask()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="projModal">
+  <div class="modal">
+    <div class="modal-title">プロジェクトを作成</div>
+    <div class="form-grp"><label class="form-lbl">プロジェクト名 *</label><input class="form-inp" id="pName" placeholder="例：飲食店開業プロジェクト"></div>
+    <div class="form-grp"><label class="form-lbl">カラー</label><div class="color-grid" id="projColorGrid"></div></div>
+    <div class="form-row2">
+      <div class="form-grp"><label class="form-lbl">期限</label><input class="form-inp" id="pDeadline" type="date"></div>
+      <div class="form-grp"><label class="form-lbl">役割</label><select class="form-sel" id="pRole"></select></div>
+    </div>
+    <div class="form-grp"><label class="form-lbl">概要・目標</label><input class="form-inp" id="pDesc" placeholder="プロジェクトの目標..."></div>
+    <div class="modal-footer">
+      <button class="sec-btn" onclick="closeModal('projModal')">キャンセル</button>
+      <button class="primary-btn" onclick="saveProject()">作成</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="roleModal">
+  <div class="modal">
+    <div class="modal-title">役割を追加</div>
+    <div class="form-grp"><label class="form-lbl">役割名</label><input class="form-inp" id="roleName" placeholder="例：経営者、家族..."></div>
+    <div class="modal-footer">
+      <button class="sec-btn" onclick="closeModal('roleModal')">キャンセル</button>
+      <button class="primary-btn" onclick="saveRole()">追加</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+/* ══ CONSTANTS ══ */
+const PROJ_COLORS=['#1D9E75','#4285f4','#D85A30','#BA7517','#7F77DD','#D4537E','#639922','#1D6EA5'];
+const CAL_COLORS =['#4285f4','#34a853','#ea4335','#fbbc04','#a142f4','#24c1e0','#ff6d01','#795548'];
+
+// Use REAL current date — no hardcoding
+function today() { return new Date(); }
+
+let weekOffset = 0;
+let selProjColor = PROJ_COLORS[2];
+let selCalColor  = CAL_COLORS[0];
+let gcalEvents   = []; // parsed iCal events
+
+/* ══ STATE ══ */
+let S = (()=>{
+  try { const s=localStorage.getItem('covey5'); if(s) return JSON.parse(s); } catch(e){}
+  return {
+    projects:[
+      {id:1,name:'飲食店開業プロジェクト',color:'#D85A30',deadline:'2026-09-30',role:'経営者',desc:'京橋周辺バー＆レストラン開業'},
+      {id:2,name:'Fairly Connecting採用強化',color:'#1D9E75',deadline:'2026-06-30',role:'経営者',desc:'特定技能・外国人採用支援'},
+      {id:3,name:'Job Change Japan開発',color:'#4285f4',deadline:'2026-05-31',role:'経営者',desc:'GitHub Pages採用Webアプリ'}
+    ],
+    roles:['経営者','家族','登録支援機関代表','FCオーナー','社会貢献者'],
+    tasks:[
+      {id:1,name:'物件契約書の最終確認',q:1,proj:1,done:false,role:'経営者',due:'',note:'',datetime:'',duration:60},
+      {id:2,name:'週間採用計画の策定',q:2,proj:2,done:false,role:'経営者',due:'',note:'',datetime:'',duration:60},
+      {id:3,name:'GAS CORS問題修正',q:2,proj:3,done:true,role:'経営者',due:'',note:'',datetime:'',duration:60},
+      {id:4,name:'まゆハ行政書士メール返信',q:3,proj:null,done:false,role:'登録支援機関代表',due:'',note:'',datetime:'',duration:30},
+      {id:5,name:'SNSチェック・返信',q:4,proj:null,done:false,role:null,due:'',note:'',datetime:'',duration:20},
+      {id:6,name:'求人票テンプレートの刷新',q:2,proj:2,done:false,role:'経営者',due:'',note:'',datetime:'',duration:90}
+    ],
+    calendars:[{
+      id:1,name:'Solae共有カレンダー',
+      url:'https://calendar.google.com/calendar/ical/1e565cf0bb4a346424f3a512e0a4935c1868b1d0f8ee34394ed301281bf2acc2%40group.calendar.google.com/public/basic.ics',
+      color:'#4285f4',status:'pending'
+    }],
+    gasProxyUrl:'',
+    nextId:20
+  };
+})();
+
+function save(){try{localStorage.setItem('covey5',JSON.stringify(S));}catch(e){}}
+
+/* ══ DATE HELPERS ══ */
+
+// Get Monday of the week containing `date`, offset by `weekOffset` weeks
+function getMonday(offset) {
+  const now = today();
+  const dow = now.getDay(); // 0=Sun,1=Mon,...
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1) + offset * 7);
+  monday.setHours(0, 0, 0, 0);
+  return monday;
+}
+
+function weekDays(offset) {
+  const mon = getMonday(offset);
+  return Array.from({length:7}, (_, i) => {
+    const d = new Date(mon);
+    d.setDate(mon.getDate() + i);
+    return d;
+  });
+}
+
+// Returns "YYYY-MM-DD" for a Date in local time
+function localDateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function weekNum(d) {
+  const s = new Date(d.getFullYear(), 0, 1);
+  return Math.ceil(((d - s) / 86400000 + s.getDay() + 1) / 7);
+}
+
+/* ══ iCAL PARSER ══ */
+const GAS_CODE = `function doGet(e) {
+  var url = e.parameter.url;
+  if (!url) return ContentService.createTextOutput('error: no url').setMimeType(ContentService.MimeType.TEXT);
+  try {
+    var res = UrlFetchApp.fetch(url, {muteHttpExceptions: true, followRedirects: true});
+    return ContentService.createTextOutput(res.getContentText('UTF-8')).setMimeType(ContentService.MimeType.TEXT);
+  } catch(err) {
+    return ContentService.createTextOutput('error: ' + err).setMimeType(ContentService.MimeType.TEXT);
+  }
+}`;
+
+function copyGasCode() {
+  navigator.clipboard.writeText(GAS_CODE).then(() => toast('✓ コードをコピーしました','success')).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = GAS_CODE; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    toast('✓ コードをコピーしました','success');
+  });
+}
+
+async function fetchICS(icsUrl) {
+  if (!S.gasProxyUrl) throw new Error('GASプロキシURLが未設定です');
+
+  let gasUrl = S.gasProxyUrl.trim().replace(/\/+$/, '');
+  if (!gasUrl.includes('/exec')) gasUrl += '/exec';
+  const proxyUrl = gasUrl + '?url=' + encodeURIComponent(icsUrl);
+
+  const res = await fetch(proxyUrl, {
+    method: 'GET',
+    mode: 'cors',
+    redirect: 'follow',
+    cache: 'no-cache'
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + res.statusText);
+  const text = await res.text();
+  if (text.startsWith('ERROR:') || text.startsWith('error:')) throw new Error(text);
+  return text;
+}
+
+// Parse iCal text → array of event objects with JS Date start/end
+function parseICS(text) {
+  const evs = [];
+  // Unfold continuation lines
+  const unfolded = text.replace(/\r\n[ \t]/g, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const lines = unfolded.split('\n');
+  let cur = null;
+  // Store raw line map for current event
+  let rawProps = {};
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (line === 'BEGIN:VEVENT') { cur = {}; rawProps = {}; continue; }
+    if (line === 'END:VEVENT') {
+      if (cur) {
+        // Parse start/end now that we have all props
+        cur.start = parseICSDateFull(rawProps.DTSTART_RAW, rawProps.TZID);
+        cur.end   = rawProps.DTEND_RAW ? parseICSDateFull(rawProps.DTEND_RAW, rawProps.TZID) : null;
+        cur.allDay = rawProps.DTSTART_RAW && /^\d{8}$/.test(rawProps.DTSTART_RAW.trim());
+        if (cur.start) evs.push(cur);
+      }
+      cur = null; rawProps = {}; continue;
+    }
+    if (!cur) continue;
+
+    const ci = line.indexOf(':');
+    if (ci < 0) continue;
+    const fullKey = line.slice(0, ci).toUpperCase();
+    const val = line.slice(ci + 1);
+
+    // Extract base key and params
+    const parts = fullKey.split(';');
+    const baseKey = parts[0];
+
+    if (baseKey === 'SUMMARY') cur.title = unescapeICS(val);
+    if (baseKey === 'DESCRIPTION') cur.desc = unescapeICS(val);
+    if (baseKey === 'LOCATION') cur.location = unescapeICS(val);
+    if (baseKey === 'UID') cur.uid = val.trim();
+
+    if (baseKey === 'DTSTART') {
+      rawProps.DTSTART_RAW = val;
+      // Extract TZID if present e.g. DTSTART;TZID=Asia/Tokyo:20260422T100000
+      const tzM = fullKey.match(/TZID=([^;:]+)/);
+      if (tzM) rawProps.TZID = tzM[1];
+    }
+    if (baseKey === 'DTEND') {
+      rawProps.DTEND_RAW = val;
+    }
+  }
+  return evs;
+}
+
+function unescapeICS(s) {
+  return (s||'').replace(/\\n/g,' ').replace(/\\,/g,',').replace(/\\;/g,';').replace(/\\\\/g,'\\').trim();
+}
+
+// Convert iCal date string to JS Date
+// val: raw value part (after colon), e.g. "20260422T100000Z" or "20260422T100000" or "20260422"
+// tzid: optional TZID param value e.g. "Asia/Tokyo"
+function parseICSDateFull(val, tzid) {
+  if (!val) return null;
+  val = val.trim();
+
+  // DATE-only: 20260422
+  if (/^\d{8}$/.test(val)) {
+    return new Date(+val.slice(0,4), +val.slice(4,6)-1, +val.slice(6,8));
+  }
+
+  // DATETIME with Z (UTC): 20260422T010000Z
+  if (/^\d{8}T\d{6}Z$/.test(val)) {
+    return new Date(Date.UTC(
+      +val.slice(0,4), +val.slice(4,6)-1, +val.slice(6,8),
+      +val.slice(9,11), +val.slice(11,13), +val.slice(13,15)
+    ));
+  }
+
+  // DATETIME no Z: 20260422T100000  (floating or TZID)
+  if (/^\d{8}T\d{6}$/.test(val)) {
+    const y=+val.slice(0,4), mo=+val.slice(4,6)-1, d=+val.slice(6,8);
+    const h=+val.slice(9,11), m=+val.slice(11,13), s=+val.slice(13,15);
+    // If TZID=Asia/Tokyo, treat as local (most Japanese calendars use JST=UTC+9)
+    // We construct as local time (browser is in JST for this user)
+    return new Date(y, mo, d, h, m, s);
+  }
+
+  return null;
+}
+
+/* ══ SYNC ══ */
+async function syncAll() {
+  if (!S.calendars.length) { toast('カレンダーが登録されていません','info'); switchView('cal-settings'); return; }
+  if (!S.gasProxyUrl) {
+    toast('⚠ GASプロキシを先に設定してください（カレンダー設定タブ）','error');
+    switchView('cal-settings'); return;
+  }
+  setSyncDot('syncing');
+  gcalEvents = [];
+  let ok = 0, fail = 0, failNames = [];
+  const debugLines = [];
+
+  for (let i = 0; i < S.calendars.length; i++) {
+    const cal = S.calendars[i];
+    debugLines.push(`--- カレンダー: ${cal.name} ---`);
+    try {
+      const txt = await fetchICS(cal.url);
+      debugLines.push(`取得: ${txt.length}文字`);
+
+      // Quick validity check
+      if (!txt.includes('BEGIN:VCALENDAR') && !txt.includes('BEGIN:VEVENT')) {
+        debugLines.push(`⚠ iCalデータが見つかりません。レスポンス先頭: ${txt.slice(0,100)}`);
+        cal.status = 'error'; fail++; failNames.push(cal.name); continue;
+      }
+
+      const evs = parseICS(txt);
+      debugLines.push(`パース結果: ${evs.length}件のイベント`);
+
+      // Show a few event titles + dates for debugging
+      evs.slice(0, 5).forEach(ev => {
+        const ds = ev.start ? `${ev.start.toLocaleDateString('ja-JP')} ${ev.allDay ? '終日' : ev.start.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}` : 'no date';
+        debugLines.push(`  • ${ev.title || '(無題)'} — ${ds}`);
+      });
+      if (evs.length > 5) debugLines.push(`  ...他${evs.length-5}件`);
+
+      evs.forEach(ev => { ev.calIdx = i; ev.calColor = cal.color; ev.calName = cal.name; });
+      gcalEvents.push(...evs);
+      cal.status = 'ok'; ok++;
+    } catch(err) {
+      debugLines.push(`❌ エラー: ${err.message}`);
+      cal.status = 'error'; fail++; failNames.push(cal.name);
+    }
+  }
+
+  // Show debug info
+  const dp = document.getElementById('debugPanel');
+  dp.innerHTML = debugLines.map(l => e(l)).join('<br>');
+  dp.classList.add('show');
+
+  save();
+  renderCalSettings();
+  renderCal();
+  document.getElementById('stGcal').textContent = gcalEvents.length + '件';
+  setSyncDot(fail === 0 ? 'synced' : 'error');
+
+  if (fail === 0) toast(`📆 ${gcalEvents.length}件のイベントを取得しました（${ok}カレンダー）`, 'success');
+  else toast(`⚠ ${ok}件成功、失敗: ${failNames.join('、')}  ─  🔍デバッグを確認`, 'error', 6000);
+}
+
+function setSyncDot(s) {
+  document.getElementById('syncDot').className = 'sync-dot ' + s;
+  document.getElementById('syncLabel').textContent = {syncing:'同期中...',synced:'同期済み',error:'エラー'}[s] || 'カレンダー同期';
+}
+
+function saveGasUrl() {
+  const url = document.getElementById('gasProxyUrl').value.trim();
+  if (!url) { toast('URLを入力してください','error'); return; }
+  S.gasProxyUrl = url; save();
+  setHint('✓ 保存されました', 'var(--accent)');
+  toast('✓ GASプロキシURLを保存しました','success');
+}
+
+async function testGas() {
+  const url = document.getElementById('gasProxyUrl').value.trim();
+  if (!url) { toast('URLを入力してください','error'); return; }
+  setHint('接続テスト中...', 'var(--q3-tx)');
+
+  // まずGASプロキシ自体の疎通確認（パラメータなし）
+  const doTest = (targetUrl) => new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', targetUrl, true);
+    xhr.timeout = 12000;
+    xhr.onload = () => resolve(xhr.responseText);
+    xhr.onerror = () => reject(new Error('ネットワークエラー（XHR）'));
+    xhr.ontimeout = () => reject(new Error('タイムアウト'));
+    xhr.send();
+  });
+
+  try {
+    // ① GAS自体の疎通テスト
+    const pingText = await doTest(url);
+    if (!pingText.includes('ok') && !pingText.includes('proxy')) {
+      setHint('⚠ GAS応答が予期しない形式です: ' + pingText.slice(0,60), '#ea4335');
+      return;
+    }
+
+    // ② カレンダーデータの取得テスト
+    const testIcs = S.calendars[0]?.url || 'https://calendar.google.com/calendar/ical/japanese__ja%40holiday.calendar.google.com/public/basic.ics';
+    const calText = await doTest(url + '?url=' + encodeURIComponent(testIcs));
+
+    if (calText.includes('BEGIN:VCALENDAR') || calText.includes('BEGIN:VEVENT')) {
+      setHint('✅ 接続成功！カレンダーデータを取得できました', 'var(--accent)');
+      toast('✅ GASプロキシ接続成功！','success');
+      S.gasProxyUrl = url; save();
+    } else if (calText.startsWith('ERROR:')) {
+      setHint('⚠ GASエラー: ' + calText.slice(0,100), '#ea4335');
+      toast('GASがエラーを返しました。カレンダーのURLを確認してください','error',5000);
+    } else {
+      setHint('⚠ iCalデータが返ってきていません。カレンダーURLが非公開かもしれません', '#ea4335');
+      toast('カレンダーURLを「iCal形式の非公開URL」に変更してください','error',5000);
+    }
+  } catch(err) {
+    setHint('❌ 接続失敗: ' + err.message + '  →  ブラウザの開発者ツール(F12)→コンソールでエラー詳細を確認してください', '#ea4335');
+    toast('接続失敗: ' + err.message, 'error', 6000);
+  }
+}
+
+function setHint(msg, color) {
+  const h = document.getElementById('gasProxyHint');
+  h.textContent = msg; h.style.color = color;
+}
+
+function addCalendar() {
+  let name = document.getElementById('newCalName').value.trim();
+  let url  = document.getElementById('newCalUrl').value.trim();
+  if (!url) { toast('URLを入力してください','error'); return; }
+  // Auto-convert embed URL
+  if (url.includes('/embed?') || url.includes('embed?src=')) {
+    const m = url.match(/[?&]src=([^&]+)/);
+    if (m) {
+      const id = decodeURIComponent(m[1]);
+      url = `https://calendar.google.com/calendar/ical/${encodeURIComponent(id)}/public/basic.ics`;
+      toast('📋 Embed URLをiCal URLに自動変換しました','info');
+    }
+  }
+  if (!name) name = `カレンダー${S.calendars.length+1}`;
+  S.calendars.push({id:S.nextId++, name, url, color:selCalColor, status:'pending'});
+  save();
+  document.getElementById('newCalName').value = '';
+  document.getElementById('newCalUrl').value = '';
+  renderCalSettings();
+  if (S.gasProxyUrl) syncAll();
+  else toast('カレンダーを登録しました。GASプロキシを設定してから同期してください','info');
+}
+
+function deleteCalendar(id) {
+  S.calendars = S.calendars.filter(c => c.id !== id);
+  gcalEvents = gcalEvents.filter(ev => S.calendars[ev.calIdx]?.id !== id);
+  save(); renderCalSettings(); renderCal();
+  toast('カレンダーを削除しました','info');
+}
+
+/* ══ RENDER ══ */
+function render() {
+  renderSidebar(); renderRoles(); renderStats(); renderQuad();
+  renderCal(); renderMatrix(); renderProjects(); renderCalSettings(); populateSels(); save();
+}
+
+function renderSidebar() {
+  document.getElementById('sbProjects').innerHTML = S.projects.map(p =>
+    `<button class="nav-item" onclick="switchView('projects')">
+      <div class="proj-dot" style="background:${p.color}"></div>
+      <span style="flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e(p.name)}</span>
+    </button>`).join('');
+}
+
+function renderRoles() {
+  document.getElementById('rolesWrap').innerHTML =
+    S.roles.map((r,i) => `<div class="role-chip ${i<2?'on':''}" onclick="this.classList.toggle('on')">${e(r)}</div>`).join('')
+    + `<button class="role-add" onclick="openModal('roleModal')">＋ 役割追加</button>`;
+}
+
+function renderStats() {
+  const tot=S.tasks.length, dn=S.tasks.filter(t=>t.done).length, q2=S.tasks.filter(t=>t.q===2).length;
+  document.getElementById('stTotal').textContent = tot;
+  document.getElementById('stDone').textContent  = dn;
+  document.getElementById('stQ2').textContent    = tot ? Math.round(q2/tot*100)+'%' : '0%';
+  document.getElementById('stGcal').textContent  = gcalEvents.length+'件';
+}
+
+function taskHTML(t) {
+  const proj = t.proj ? S.projects.find(p => p.id===t.proj) : null;
+  const due  = t.due  ? new Date(t.due) : null;
+  const tod  = new Date(); tod.setHours(0,0,0,0);
+  const ov   = due && due < tod && !t.done;
+  return `<div class="task-row">
+    <div class="t-check ${t.done?'checked':''}" onclick="toggleTask(${t.id})"></div>
+    <div class="t-body">
+      <div class="t-name ${t.done?'done':''}">${e(t.name)}</div>
+      <div class="t-meta">
+        ${proj?`<span class="t-ptag" style="background:${proj.color}22;color:${proj.color}">${e(proj.name)}</span>`:''}
+        ${t.role?`<span class="t-ptag">${e(t.role)}</span>`:''}
+        ${due?`<span class="t-due ${ov?'ov':''}">${ov?'⚠ ':''}${due.getMonth()+1}/${due.getDate()}</span>`:''}
+      </div>
+    </div>
+    <button class="t-del" onclick="deleteTask(${t.id})">✕</button>
+  </div>`;
+}
+
+function renderQuad() {
+  [1,2,3,4].forEach(q => {
+    const t = S.tasks.filter(x => x.q===q);
+    document.getElementById(`q${q}list`).innerHTML = t.length ? t.map(taskHTML).join('') : `<div class="empty-msg">タスクなし</div>`;
+  });
+}
+
+function renderMatrix() {
+  [1,2,3,4].forEach(q => {
+    const el = document.getElementById(`mq${q}`); if (!el) return;
+    const t = S.tasks.filter(x => x.q===q);
+    el.innerHTML = t.length ? t.map(taskHTML).join('') : `<div class="empty-msg">タスクなし</div>`;
+  });
+}
+
+function renderCal() {
+  const days = weekDays(weekOffset);
+  const DN = ['月','火','水','木','金','土','日'];
+  const todayStr = localDateStr(today());
+
+  document.getElementById('weekTitle').textContent = `${days[0].getFullYear()}年 第${weekNum(days[0])}週`;
+  document.getElementById('weekSub').textContent   = `${days[0].getMonth()+1}月${days[0].getDate()}日(月) — ${days[6].getMonth()+1}月${days[6].getDate()}日(日)`;
+
+  // Week range strings
+  const wStartStr = localDateStr(days[0]);
+  const wEndStr   = localDateStr(days[6]);
+
+  // Count events visible this week
+  const visibleEvs = gcalEvents.filter(ev => {
+    if (!ev.start) return false;
+    const ds = localDateStr(ev.start);
+    return ds >= wStartStr && ds <= wEndStr;
+  });
+  const countEl = document.getElementById('calEvCount');
+  if (countEl) countEl.textContent = visibleEvs.length > 0 ? `（今週 ${visibleEvs.length}件）` : '';
+
+  // ── Header ──
+  document.getElementById('calHead').innerHTML =
+    `<div class="cal-hcell" style="font-size:9px;color:var(--txt3);padding:6px 2px">JST</div>` +
+    days.map((d, i) => {
+      const ds = localDateStr(d);
+      const isT = ds === todayStr;
+      return `<div class="cal-hcell${isT?' today':''}">
+        <div style="font-size:10.5px;color:var(--txt3)">${DN[i]}</div>
+        <div class="cal-day-num">${d.getDate()}</div>
+      </div>`;
+    }).join('');
+
+  // ── All-day row ──
+  const allDayEvs = visibleEvs.filter(ev => ev.allDay);
+  let alldayHTML = `<div class="cal-allday-time" style="font-size:9px;padding-top:8px">終日</div>`;
+  for (let di = 0; di < 7; di++) {
+    const ds = localDateStr(days[di]);
+    const dayEvs = allDayEvs.filter(ev => localDateStr(ev.start) === ds);
+    const ci = (S.calendars.findIndex(c => c.id === S.calendars[0]?.id) || 0) % 8;
+    alldayHTML += `<div class="cal-allday-cell">` +
+      dayEvs.map(ev => {
+        const calCi = (ev.calIdx || 0) % 8;
+        return `<div class="allday-pill gc${calCi}" title="${e(ev.title||'')}（${e(ev.calName||'')}）">${e(ev.title||'イベント')}</div>`;
+      }).join('') + `</div>`;
+  }
+  document.getElementById('calAllday').innerHTML = alldayHTML;
+
+  // ── Hourly body ──
+  // グリッドは「行ごと」に構築: 各行 = 時間ラベル + 7曜日のセル
+  const HOURS = Array.from({length:15}, (_, i) => i + 7); // 7〜21
+  const timedEvs = visibleEvs.filter(ev => !ev.allDay);
+
+  // 日付文字列と今日フラグを事前計算
+  const dayStrs = days.map(d => localDateStr(d));
+  const dayIsToday = days.map(d => localDateStr(d) === todayStr);
+
+  let html = '';
+
+  HOURS.forEach(h => {
+    // 時間ラベルセル（1列目）
+    html += `<div class="cal-time">${h<10?'0'+h:h}:00</div>`;
+
+    // 7曜日分のセル（2〜8列目）
+    for (let di = 0; di < 7; di++) {
+      const ds = dayStrs[di];
+
+      // アプリタスク（datetime指定あり）
+      const appEvs = S.tasks.filter(t => {
+        if (!t.datetime) return false;
+        const dt = new Date(t.datetime);
+        return localDateStr(dt) === ds && dt.getHours() === h;
+      });
+
+      // Google Calendarのイベント
+      const gEvs = timedEvs.filter(ev => {
+        return ev.start && localDateStr(ev.start) === ds && ev.start.getHours() === h;
+      });
+
+      const aH = appEvs.map(t => {
+        const proj = t.proj ? S.projects.find(p => p.id===t.proj) : null;
+        const hr = Math.max(Math.ceil((t.duration||60)/60), 1);
+        return `<div class="ev-pill ${proj?'':`ev-q${t.q}`}" style="${proj?`background:${proj.color};color:#fff;`:''} height:${hr*48-6}px;top:2px" title="${e(t.name)}">${e(t.name)}</div>`;
+      }).join('');
+
+      const gH = gEvs.map((ev, ei) => {
+        const calCi = (ev.calIdx || 0) % 8;
+        const durMs = ev.end && ev.start ? ev.end - ev.start : 3600000;
+        const durH = Math.max(durMs / 3600000, 0.5);
+        const heightPx = Math.round(durH * 48) - 4;
+        const top = 2 + ei * 16;
+        return `<div class="ev-pill gc${calCi}" style="height:${heightPx}px;top:${top}px" title="${e(ev.title||'')} [${e(ev.calName||'')}]">${e(ev.title||'イベント')}</div>`;
+      }).join('');
+
+      html += `<div class="cal-cell${dayIsToday[di]?' today-col':''}">${aH}${gH}</div>`;
+    }
+  });
+
+  document.getElementById('calBody').innerHTML = html;
+
+  // 9時（インデックス2）にスクロール
+  const cb = document.getElementById('calBody');
+  if (cb) cb.scrollTop = 48 * 2; // 7:00=0, 8:00=48, 9:00=96px
+}
+
+function renderProjects() {
+  const el = document.getElementById('projGrid'); if (!el) return;
+  el.innerHTML = S.projects.map(p => {
+    const pt = S.tasks.filter(t => t.proj===p.id);
+    const dn = pt.filter(t => t.done).length;
+    const pct = pt.length ? Math.round(dn/pt.length*100) : 0;
+    return `<div class="proj-card">
+      <div class="pc-head"><div class="pc-dot" style="background:${p.color}"></div><div class="pc-name">${e(p.name)}</div><button class="sec-btn" style="padding:3px 9px;font-size:11px" onclick="deleteProject(${p.id})">削除</button></div>
+      ${p.desc?`<div style="font-size:12px;color:var(--txt3);margin-bottom:9px">${e(p.desc)}</div>`:''}
+      <div class="proj-bar-wrap"><div class="proj-bar"><div class="proj-bar-fill" style="width:${pct}%;background:${p.color}"></div></div><div class="proj-pct">${dn}/${pt.length}（${pct}%）</div></div>
+      ${p.deadline?`<div style="font-size:11px;color:var(--txt3);margin-bottom:9px">🗓 期限：${p.deadline}</div>`:''}
+      <div class="proj-task-list">
+        ${pt.length?pt.map(t=>`<div class="ptask-row"><div class="ms-check ${t.done?'done':''}" onclick="toggleTask(${t.id})"></div><div class="pt-name ${t.done?'done':''}">${e(t.name)}</div><span class="q-mini qm${t.q}">第${t.q}領域</span></div>`).join(''):`<div class="empty-msg">タスクなし</div>`}
+      </div>
+      <button class="proj-add-task" onclick="openTaskForProject(${p.id})">＋ タスクを追加</button>
+    </div>`;
+  }).join('') || `<div class="empty-msg" style="padding:30px">プロジェクトがありません</div>`;
+}
+
+function renderCalSettings() {
+  const el = document.getElementById('calEntryList'); if (!el) return;
+  el.innerHTML = S.calendars.length ? S.calendars.map(cal => {
+    const sc = {ok:'cst-ok',error:'cst-err',pending:'cst-wait'}[cal.status]||'cst-wait';
+    const st = {ok:'✓ 同期済み',error:'⚠ エラー',pending:'未同期'}[cal.status]||'未同期';
+    return `<div class="cal-entry">
+      <div class="cal-entry-swatch" style="background:${cal.color}"></div>
+      <div class="cal-entry-info"><div class="cal-entry-name">${e(cal.name)}</div><div class="cal-entry-url">${e(cal.url)}</div></div>
+      <span class="cst ${sc}">${st}</span>
+      <button class="del-cal" onclick="deleteCalendar(${cal.id})">✕</button>
+    </div>`;
+  }).join('') : `<div class="empty-msg" style="padding:10px 0">カレンダーが登録されていません</div>`;
+
+  const cg = document.getElementById('calColorGrid'); if (!cg) return;
+  cg.innerHTML = CAL_COLORS.map(c =>
+    `<div class="cswatch ${selCalColor===c?'sel':''}" style="background:${c}" onclick="selCalColor='${c}';renderCalSettings()"></div>`).join('');
+
+  const gInp = document.getElementById('gasProxyUrl');
+  if (gInp && S.gasProxyUrl && !gInp.value) gInp.value = S.gasProxyUrl;
+}
+
+function renderProjColors() {
+  const pg = document.getElementById('projColorGrid'); if (!pg) return;
+  pg.innerHTML = PROJ_COLORS.map(c =>
+    `<div class="cswatch ${selProjColor===c?'sel':''}" style="background:${c}" onclick="selProjColor='${c}';renderProjColors()"></div>`).join('');
+}
+
+function populateSels() {
+  const ps = document.getElementById('tProj');
+  if (ps) ps.innerHTML = '<option value="">なし</option>' + S.projects.map(p=>`<option value="${p.id}">${e(p.name)}</option>`).join('');
+  ['tRole','pRole'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = '<option value="">なし</option>' + S.roles.map(r=>`<option value="${e(r)}">${e(r)}</option>`).join('');
+  });
+}
+
+/* ══ ACTIONS ══ */
+function toggleTask(id){const t=S.tasks.find(t=>t.id===id);if(!t)return;t.done=!t.done;render();toast(t.done?`✓ 完了！`:`未完了に戻しました`,'success');}
+function deleteTask(id){S.tasks=S.tasks.filter(t=>t.id!==id);render();toast('タスクを削除','info');}
+function deleteProject(id){if(!confirm('削除しますか？'))return;S.tasks.forEach(t=>{if(t.proj===id)t.proj=null;});S.projects=S.projects.filter(p=>p.id!==id);render();toast('プロジェクトを削除','info');}
+function quickAdd(ev,q){if(ev.key!=='Enter'||!ev.target.value.trim())return;S.tasks.push({id:S.nextId++,name:ev.target.value.trim(),q,proj:null,done:false,role:null,due:'',note:'',datetime:'',duration:60});ev.target.value='';render();}
+function openTaskForProject(projId){populateSels();document.getElementById('tProj').value=projId;openModal('taskModal');}
+function saveTask(){
+  const name=document.getElementById('tName').value.trim();
+  if(!name){toast('タスク名を入力してください','error');return;}
+  S.tasks.push({id:S.nextId++,name,q:parseInt(document.getElementById('tQ').value),proj:parseInt(document.getElementById('tProj').value)||null,role:document.getElementById('tRole').value||null,due:document.getElementById('tDue').value,note:document.getElementById('tNote').value,datetime:document.getElementById('tDatetime').value,duration:parseInt(document.getElementById('tDuration').value)||60,done:false});
+  closeModal('taskModal');['tName','tNote','tDue','tDatetime'].forEach(id=>document.getElementById(id).value='');
+  render();toast(`✓ "${name}" を追加しました`,'success');
+}
+function saveProject(){
+  const name=document.getElementById('pName').value.trim();
+  if(!name){toast('プロジェクト名を入力してください','error');return;}
+  S.projects.push({id:S.nextId++,name,color:selProjColor,deadline:document.getElementById('pDeadline').value,role:document.getElementById('pRole').value||null,desc:document.getElementById('pDesc').value});
+  closeModal('projModal');['pName','pDesc'].forEach(id=>document.getElementById(id).value='');
+  render();toast(`✓ "${name}" を作成しました`,'success');
+}
+function saveRole(){
+  const name=document.getElementById('roleName').value.trim();
+  if(!name){toast('役割名を入力してください','error');return;}
+  S.roles.push(name);closeModal('roleModal');document.getElementById('roleName').value='';
+  render();toast(`役割 "${name}" を追加`,'success');
+}
+
+/* ══ NAV ══ */
+function switchView(view) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  const el = document.getElementById(`view-${view}`); if (el) el.classList.add('active');
+  document.querySelectorAll('[data-view]').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll(`[data-view="${view}"]`).forEach(b => b.classList.add('active'));
+  if (view==='projects') renderProjects();
+  if (view==='matrix')   renderMatrix();
+  if (view==='cal-settings') renderCalSettings();
+  closeSidebar();
+}
+document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => switchView(b.dataset.view)));
+function shiftWeek(d){weekOffset+=d;renderCal();}
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');}
+function openModal(id){populateSels();renderProjColors();document.getElementById(id).classList.add('open');setTimeout(()=>{const i=document.querySelector(`#${id} .form-inp`);if(i)i.focus();},120);}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.overlay').forEach(o => o.addEventListener('click', ev => { if(ev.target===o) o.classList.remove('open'); }));
+
+/* ══ UTILS ══ */
+function e(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function toast(msg,type='info',dur=3800){
+  const w=document.getElementById('toastWrap');
+  const el=document.createElement('div');el.className=`toast ${type}`;el.textContent=msg;w.appendChild(el);
+  setTimeout(()=>{el.style.cssText='opacity:0;transition:opacity .3s';setTimeout(()=>el.remove(),300);},dur);
+}
+
+/* ══ INIT ══ */
+render();
+if (S.gasProxyUrl && S.calendars.length > 0) {
+  setTimeout(syncAll, 800);
+} else if (S.calendars.length > 0 && !S.gasProxyUrl) {
+  setTimeout(() => toast('💡 カレンダー同期にはGASプロキシの設定が必要です。「📆 カレンダー」タブから設定してください。','info',7000), 1500);
+}
+</script>
+</body>
+</html>
